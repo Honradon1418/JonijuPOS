@@ -660,6 +660,25 @@
             .form-row { flex-direction: column; }
             .form-group { min-width: 100%; }
         }
+
+        /* --- Category Specific Colors --- */
+.item-card.card-drink { 
+    background-color: #e3f2fd; /* Light Blue */
+    border-left: 5px solid #2196f3; 
+}
+.item-card.card-snack { 
+    background-color: #fdf5e6; /* Light Cream/Orange */
+    border-left: 5px solid #e67e22; 
+}
+/* --- Visual Differentiation --- */
+.item-card.card-drink { 
+    border-top: 5px solid #3498db !important; /* Blue for Drinks */
+    background-color: #f0f8ff; 
+}
+.item-card.card-snack { 
+    border-top: 5px solid #e67e22 !important; /* Orange/Brown for Snacks */
+    background-color: #fffaf0;
+}
     </style>
 </head>
 <body>
@@ -1412,22 +1431,80 @@
             if (ticket) markAsServed(ticket.dataset.id);
         });
 
-        /* ─── Initialization ─── */
-        state.products = loadProducts();
-        state.sales = loadSales();
-        renderCategoryFilters();
-        renderMenuGrid();
-        renderCart();
-        renderProductTable();
-        renderSalesTable();
-        updateCategoryDatalist();
-        renderQueue();
+    /* ─── JONIJU MENU SYSTEM ─── */
+        window.onload = function() {
+            // 1. Define the Menu
+            function getJonijuMenu() {
+                const menu = [
+                    { name: "Japanese Siomai", category: "Snacks", price: 40, stock: 99 },
+                    { name: "Sharkskin Siomai", category: "Snacks", price: 40, stock: 99 },
+                    { name: "Pork Siomai", category: "Snacks", price: 35, stock: 99 },
+                    { name: "Chicken Siomai", category: "Snacks", price: 35, stock: 99 },
+                    { name: "Chicken Fingers", category: "Snacks", price: 50, stock: 50 },
+                    { name: "Tofu Squares", category: "Snacks", price: 30, stock: 50 },
+                    { name: "Pork Chao Fan", category: "Rice", price: 30, stock: 50 },
+                    { name: "Java Rice", category: "Rice", price: 20, stock: 50 }
+                ];
 
-        // Timer: refresh queue every 30s for overdue highlighting
-        setInterval(function () {
-            if (state.activeTab === 'queue') renderQueue();
-        }, 30000);
+                const beverageNames = ["Green Apple Soda", "Strawberry Soda", "Blueberry Soda", "Lychee Soda", "Oreo Milk", "Matcha Traditional"];
+                beverageNames.forEach(bev => {
+                    menu.push({ name: bev + " (12oz)", category: "Drinks", price: 39, stock: 100 });
+                    menu.push({ name: bev + " (16oz)", category: "Drinks", price: 49, stock: 100 });
+                    menu.push({ name: bev + " (22oz)", category: "Drinks", price: 59, stock: 100 });
+                });
+                return menu;
+            }
 
+            // 2. Custom Styling Logic
+            function applyCategoryColors() {
+                document.querySelectorAll('.item-card').forEach(card => {
+                    const id = card.dataset.id;
+                    const product = state.products.find(p => p.id === id);
+                    if (product) {
+                        const cat = (product.category || "").toLowerCase();
+                        if (cat.includes('drink') || cat.includes('soda') || cat.includes('milk') || cat.includes('matcha')) {
+                            card.classList.add('card-drink');
+                        } else {
+                            card.classList.add('card-snack');
+                        }
+                    }
+                });
+            }
+
+            // 3. Hook into the existing render function
+            if (typeof renderMenuGrid === 'function') {
+                const originalRender = renderMenuGrid;
+                renderMenuGrid = function() {
+                    originalRender(); 
+                    applyCategoryColors();
+                };
+            }
+
+            /* ─── RUN INITIALIZATION ─── */
+            state.products = loadProducts();
+            
+            if (state.products.length === 0) {
+                state.products = getJonijuMenu().map(item => ({
+                    ...item,
+                    id: 'prod_' + Math.random().toString(36).substr(2, 9)
+                }));
+                saveProducts();
+            }
+
+            state.sales = loadSales();
+            renderCategoryFilters();
+            renderMenuGrid();
+            renderCart();
+            renderProductTable();
+            renderSalesTable();
+            updateCategoryDatalist();
+            renderQueue();
+
+            setInterval(function () {
+                if (state.activeTab === 'queue') renderQueue();
+            }, 30000);
+        };
+        
     })();
     </script>
 </body>
